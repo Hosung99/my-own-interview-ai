@@ -1,6 +1,7 @@
 # 나만의 로컬 면접 AI
 
-Andrej Karpathy의 LLM OS 개념을 기반으로 한 **로컬 설치형 면접 AI**입니다.
+Andrej Karpathy의 LLM WIKI 개념을 기반으로 한 **로컬 설치형 면접 AI**입니다.
+
 이력서(PDF)를 업로드하면 AI 면접관이 이력서 내용을 바탕으로 질문을 생성하고, 면접 대화를 누적해 본인만의 **Interview Wiki**를 자동으로 만들어줍니다.
 
 ---
