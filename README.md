@@ -11,22 +11,59 @@ Andrej Karpathy의 LLM OS 개념을 기반으로 한 **로컬 설치형 면접 A
 - **이미지 PDF OCR 지원** — 스캔/이미지 기반 PDF도 Tesseract OCR로 자동 처리
 - **Interview Wiki 자동 생성** — 면접 대화를 LLM이 분석해 경험, 기술스택, 강점, 약점, 미커버 토픽을 구조화
 - **Wiki 영구 저장** — 로컬 JSON 파일로 저장되어 앱을 재시작해도 이전 면접 내용 유지 및 누적
-- **멀티 모델 지원** — OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet, Google Gemini 1.5 Pro 선택 가능
+- **구독 계정 지원** — Claude.ai 구독 또는 ChatGPT Plus 구독으로 API Key 없이 사용 가능
 - **완전 로컬 처리** — API Key와 이력서 데이터는 외부 서버로 전송되지 않음
 
 ---
 
-## 기술 스택
+## 모델 선택 방법
 
-| 역할     | 라이브러리                               |
-| -------- | ---------------------------------------- |
-| UI       | Streamlit                                |
-| LLM 연동 | LiteLLM                                  |
-| PDF 로딩 | PyPDF, pdf2image                         |
-| OCR      | Tesseract, pytesseract                   |
-| 임베딩   | sentence-transformers (all-MiniLM-L6-v2) |
-| 벡터 DB  | ChromaDB                                 |
-| RAG      | LangChain                                |
+총 두 가지 방식으로 사용할 수 있습니다.
+
+### A. 구독 계정 사용 (API Key 불필요)
+
+| 구독 서비스       | 필요한 CLI   | 모델 선택             |
+| ----------------- | ------------ | --------------------- |
+| Claude.ai 구독    | Claude Code  | `Claude (구독)`       |
+| ChatGPT Plus 구독 | OpenAI Codex | `OpenAI Codex (구독)` |
+
+**Claude.ai 구독 사용자**
+
+Claude Code가 설치되어 있고 로그인된 상태라면 바로 사용 가능합니다.
+
+```bash
+# Claude Code 설치 확인
+claude --version
+```
+
+**ChatGPT Plus 구독 사용자**
+
+OpenAI Codex CLI를 설치하고 로그인합니다.
+
+```bash
+# Codex CLI 설치
+npm install -g @openai/codex
+
+# 로그인
+codex login
+```
+
+---
+
+### B. API Key 사용
+
+`console.anthropic.com`, `platform.openai.com`, `aistudio.google.com`에서 발급한 API Key를 `.env` 파일에 입력합니다.
+
+| 모델              | 발급처                                             |
+| ----------------- | -------------------------------------------------- |
+| GPT-4o            | [OpenAI Platform](https://platform.openai.com)     |
+| Claude 3.5 Sonnet | [Anthropic Console](https://console.anthropic.com) |
+| Gemini 1.5 Pro    | [Google AI Studio](https://aistudio.google.com)    |
+
+```bash
+cp .env.example .env
+# .env 파일을 열어 해당 API Key 입력 (사용할 모델만 입력)
+```
 
 ---
 
@@ -34,7 +71,7 @@ Andrej Karpathy의 LLM OS 개념을 기반으로 한 **로컬 설치형 면접 A
 
 ### 1. 사전 요구사항
 
-- Python 3.14+
+- Python 3.14.3+
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) (이미지 PDF 지원)
 - [Poppler](https://poppler.freedesktop.org/) (PDF → 이미지 변환)
 
@@ -65,29 +102,13 @@ source venv/bin/activate
 
 ### 4. 의존성 설치
 
+`requirements.txt`에 Streamlit을 포함한 모든 패키지가 포함되어 있습니다.
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. API Key 설정
-
-`.env.example`을 복사해서 `.env` 파일을 만들고, 사용할 모델의 API Key를 입력합니다.
-
-```bash
-cp .env.example .env
-```
-
-`.env` 파일을 열어 해당 API Key를 입력하세요:
-
-```
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=AI...
-```
-
-> 사용할 모델의 Key만 입력하면 됩니다. 나머지는 비워두세요.
-
-### 6. 앱 실행
+### 5. 앱 실행
 
 ```bash
 streamlit run main.py
@@ -99,11 +120,11 @@ streamlit run main.py
 
 ## 사용 방법
 
-1. **사이드바에서 모델 선택** — GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro 중 선택
+1. **사이드바에서 모델 선택** — 구독 계정 또는 API Key 방식 중 선택
 2. **이력서 업로드** — PDF 파일 업로드 (텍스트 PDF 및 이미지 PDF 모두 지원)
-4. **면접 진행** — 채팅창에 답변 입력
-5. **Wiki 생성** — "면접 종료 & Wiki 생성" 버튼 클릭 시 대화 내용을 분석해 Wiki 자동 생성
-6. **연속 면접** — Wiki는 로컬에 저장되어 다음 실행 시 자동 로드 및 누적
+3. **면접 진행** — 채팅창에 답변 입력
+4. **Wiki 생성** — "면접 종료 & Wiki 생성" 버튼 클릭 시 대화 내용을 분석해 Wiki 자동 생성
+5. **연속 면접** — Wiki는 로컬에 저장되어 다음 실행 시 자동 로드 및 누적
 
 ---
 
@@ -112,20 +133,11 @@ streamlit run main.py
 ```
 my-own-interview-ai/
 ├── main.py           # Streamlit UI 및 채팅 로직
-├── core.py           # LiteLLM을 통한 LLM 호출
+├── core.py           # LLM 호출 (CLI 구독 / API Key)
 ├── rag_engine.py     # PDF 처리, OCR, ChromaDB 벡터 저장
 ├── wiki_builder.py   # 면접 대화 분석 및 Interview Wiki 생성/관리
 ├── requirements.txt  # Python 의존성
+├── .env.example      # API Key 설정 템플릿
 ├── data/             # 업로드된 PDF 및 interview_wiki.json 저장
 └── chroma_db/        # ChromaDB 벡터 DB 저장
 ```
-
----
-
-## API Key 발급
-
-| 모델              | 발급처                                             |
-| ----------------- | -------------------------------------------------- |
-| GPT-4o            | [OpenAI Platform](https://platform.openai.com)     |
-| Claude 3.5 Sonnet | [Anthropic Console](https://console.anthropic.com) |
-| Gemini 1.5 Pro    | [Google AI Studio](https://aistudio.google.com)    |
