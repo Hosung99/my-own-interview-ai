@@ -123,9 +123,12 @@ streamlit run main.py
 
 1. **사이드바에서 모델 선택** — 구독 계정 또는 API Key 방식 중 선택
 2. **이력서 업로드** — PDF 파일 업로드 (텍스트 PDF 및 이미지 PDF 모두 지원)
-3. **면접 진행** — 채팅창에 답변 입력
-4. **Wiki 생성** — "면접 종료 & Wiki 생성" 버튼 클릭 시 대화 내용을 분석해 Wiki 자동 생성
-5. **연속 면접** — Wiki는 로컬에 저장되어 다음 실행 시 자동 로드 및 누적
+3. **면접 설정 입력** — 이력서 분석 완료 후 채팅창에 난이도와 분야 입력 (예: `5년차 백엔드`)
+   - 난이도: `3년차` / `5년차` / `10년차`
+   - 분야: `백엔드` / `프론트엔드` / `풀스택` / `데이터·AI`
+4. **면접 진행** — 채팅창에 답변 입력
+5. **Wiki 생성** — "면접 종료 & Wiki 생성" 버튼 클릭 시 대화 내용을 분석해 Wiki 자동 생성
+6. **연속 면접** — Wiki는 로컬에 저장되어 다음 실행 시 자동 로드 및 누적
 
 ---
 
@@ -155,20 +158,4 @@ flowchart TD
 
     J -->|다음 세션 로드| G
     J -->|조회 / 삭제| K[Wiki 페이지]
-```
-
----
-
-## 프로젝트 구조
-
-```
-my-own-interview-ai/
-├── main.py           # Streamlit UI 및 채팅 로직
-├── core.py           # LLM 호출 (CLI 구독 / API Key)
-├── rag_engine.py     # PDF 처리, OCR, ChromaDB 벡터 저장
-├── wiki_builder.py   # 면접 대화 분석 및 Interview Wiki 생성/관리
-├── requirements.txt  # Python 의존성
-├── .env.example      # API Key 설정 템플릿
-├── data/             # 업로드된 PDF 및 interview_wiki.json 저장
-└── chroma_db/        # ChromaDB 벡터 DB 저장
 ```
