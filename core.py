@@ -47,7 +47,7 @@ def _get_response_via_codex_cli(messages: list) -> str:
     """codex CLI를 통해 응답을 받습니다 (ChatGPT Plus 구독 사용)."""
     system_prompt, conversation = _format_messages_for_cli(messages)
     prompt = f"{system_prompt}\n\n{conversation}" if system_prompt else conversation
-    cmd = ["codex", "exec", "-a", "never", prompt]
+    cmd = ["codex", "-a", "never", "exec", prompt]
     return _run_cli(cmd)
 
 
