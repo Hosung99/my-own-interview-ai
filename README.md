@@ -129,6 +129,36 @@ streamlit run main.py
 
 ---
 
+## 동작 과정
+
+```mermaid
+flowchart TD
+    A([사용자]) -->|PDF 업로드| B[RAG Engine]
+    B -->|텍스트 추출 / OCR| C[(ChromaDB)]
+
+    A -->|모델 선택| D{모델 유형}
+    D -->|구독 계정| E[Claude CLI / Codex CLI]
+    D -->|API Key| F[OpenAI / Anthropic / Google]
+
+    A -->|답변 입력| G[채팅 UI]
+
+    G -->|이력서 청크 검색| C
+    C -->|Resume Context| H[LLM 호출]
+    G -->|Wiki Context| H
+    E --> H
+    F --> H
+
+    H -->|면접 질문 생성| G
+
+    G -->|면접 종료| I[Wiki Builder]
+    I -->|구조화 저장| J[(interview_wiki.json)]
+
+    J -->|다음 세션 로드| G
+    J -->|조회 / 삭제| K[Wiki 페이지]
+```
+
+---
+
 ## 프로젝트 구조
 
 ```
