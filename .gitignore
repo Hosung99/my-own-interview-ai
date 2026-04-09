@@ -1,0 +1,32 @@
+# 가상환경
+venv/
+path/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# 환경변수
+.env
+.env.*
+
+# 사용자 데이터 (이력서, API Key 등 민감 정보)
+data/
+
+# 벡터 DB
+chroma_db/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+*.omc
