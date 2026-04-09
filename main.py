@@ -1,8 +1,11 @@
-import streamlit as st
 import os
+import streamlit as st
+from dotenv import load_dotenv
 from core import get_interview_response
 from rag_engine import RAGEngine
 from wiki_builder import build_wiki_from_conversation, load_wiki, reset_wiki, wiki_to_context_string
+
+load_dotenv()
 
 # 앱 시작 시 data/ 디렉토리 보장
 os.makedirs("./data", exist_ok=True)
@@ -26,14 +29,25 @@ with st.sidebar:
         "모델 선택",
         ["openai/gpt-4o", "anthropic/claude-3-5-sonnet-20240620", "google/gemini-1.5-pro"]
     )
-    api_key = st.text_input("API Key 입력", type="password")
+
+    # 로드된 API Key 상태 표시
+    key_map = {
+        "openai": "OPENAI_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "google": "GEMINI_API_KEY",
+    }
+    provider = model_provider.split("/")[0]
+    env_key = key_map.get(provider, "")
+    if os.environ.get(env_key):
+        st.success(f"✅ {env_key} 로드됨")
+    else:
+        st.error(f"❌ {env_key} 없음 — .env 파일을 확인하세요")
 
     st.divider()
 
     st.header("📄 자료 업로드")
     uploaded_file = st.file_uploader("이력서나 회사 위키(PDF)를 올려주세요", type="pdf")
     if uploaded_file:
-        os.makedirs("./data", exist_ok=True)
         with open(f"./data/{uploaded_file.name}", "wb") as f:
             f.write(uploaded_file.getbuffer())
         with st.spinner("파일 분석 중..."):
@@ -45,14 +59,12 @@ with st.sidebar:
     # 면접 종료 & Wiki 생성
     st.header("📖 Interview Wiki")
     if st.button("🔚 면접 종료 & Wiki 생성", type="primary", use_container_width=True):
-        if not api_key:
-            st.warning("API Key를 먼저 입력해주세요.")
-        elif not st.session_state.messages:
+        if not st.session_state.messages:
             st.warning("면접 대화가 없습니다.")
         else:
             with st.spinner("Wiki 생성 중..."):
                 wiki, error = build_wiki_from_conversation(
-                    model_provider, api_key, st.session_state.messages
+                    model_provider, st.session_state.messages
                 )
             if error:
                 st.error(error)
@@ -67,7 +79,7 @@ with st.sidebar:
 
     # Wiki 내용 표시
     wiki = st.session_state.wiki
-    if any(wiki.values()):
+    if any(wiki.get(k) for k in ["경험", "기술스택", "강점", "약점_모순", "미커버_토픽"]):
         label_map = {
             "경험": "💼 경험/프로젝트",
             "기술스택": "🛠️ 기술스택",
@@ -99,8 +111,8 @@ if prompt := st.chat_input("답변을 입력하세요..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        if not api_key:
-            st.warning("API Key를 입력해주세요.")
+        if not os.environ.get(env_key):
+            st.warning(f"{env_key}가 설정되지 않았습니다. .env 파일을 확인하세요.")
         else:
             with st.spinner("생각 중..."):
                 resume_context = st.session_state.rag.get_relevant_context(prompt)
@@ -123,7 +135,7 @@ if prompt := st.chat_input("답변을 입력하세요..."):
 
                 full_messages = [{"role": "system", "content": system_instruction}] + st.session_state.messages
 
-                response = get_interview_response(model_provider, api_key, full_messages)
+                response = get_interview_response(model_provider, full_messages)
                 st.markdown(response)
 
                 st.session_state.messages.append({"role": "assistant", "content": response})

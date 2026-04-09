@@ -34,7 +34,7 @@ Andrej Karpathy의 LLM OS 개념을 기반으로 한 **로컬 설치형 면접 A
 
 ### 1. 사전 요구사항
 
-- Python 3.10+
+- Python 3.14+
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) (이미지 PDF 지원)
 - [Poppler](https://poppler.freedesktop.org/) (PDF → 이미지 변환)
 
@@ -69,7 +69,25 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. 앱 실행
+### 5. API Key 설정
+
+`.env.example`을 복사해서 `.env` 파일을 만들고, 사용할 모델의 API Key를 입력합니다.
+
+```bash
+cp .env.example .env
+```
+
+`.env` 파일을 열어 해당 API Key를 입력하세요:
+
+```
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=AI...
+```
+
+> 사용할 모델의 Key만 입력하면 됩니다. 나머지는 비워두세요.
+
+### 6. 앱 실행
 
 ```bash
 streamlit run main.py
@@ -82,8 +100,7 @@ streamlit run main.py
 ## 사용 방법
 
 1. **사이드바에서 모델 선택** — GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro 중 선택
-2. **API Key 입력** — 선택한 모델의 API Key 입력 (로컬에서만 처리됨)
-3. **이력서 업로드** — PDF 파일 업로드 (텍스트 PDF 및 이미지 PDF 모두 지원)
+2. **이력서 업로드** — PDF 파일 업로드 (텍스트 PDF 및 이미지 PDF 모두 지원)
 4. **면접 진행** — 채팅창에 답변 입력
 5. **Wiki 생성** — "면접 종료 & Wiki 생성" 버튼 클릭 시 대화 내용을 분석해 Wiki 자동 생성
 6. **연속 면접** — Wiki는 로컬에 저장되어 다음 실행 시 자동 로드 및 누적

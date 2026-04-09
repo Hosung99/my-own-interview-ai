@@ -1,7 +1,10 @@
 import json
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 from litellm import completion
+
+load_dotenv()
 
 WIKI_PATH = "./data/interview_wiki.json"
 
@@ -19,7 +22,7 @@ def load_wiki() -> dict:
     if os.path.exists(WIKI_PATH):
         with open(WIKI_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
-    return {k: list(v) for k, v in EMPTY_WIKI.items()}
+    return {k: list(v) if isinstance(v, list) else v for k, v in EMPTY_WIKI.items()}
 
 
 def save_wiki(wiki: dict) -> None:
@@ -29,16 +32,7 @@ def save_wiki(wiki: dict) -> None:
 
 
 def reset_wiki() -> None:
-    save_wiki({k: list(v) for k, v in EMPTY_WIKI.items()})
-
-
-def _set_api_key(model_name: str, api_key: str) -> None:
-    if "anthropic" in model_name:
-        os.environ["ANTHROPIC_API_KEY"] = api_key
-    elif "openai" in model_name:
-        os.environ["OPENAI_API_KEY"] = api_key
-    elif "gemini" in model_name:
-        os.environ["GEMINI_API_KEY"] = api_key
+    save_wiki({k: list(v) if isinstance(v, list) else v for k, v in EMPTY_WIKI.items()})
 
 
 def _parse_json_response(content: str) -> dict:
@@ -50,9 +44,10 @@ def _parse_json_response(content: str) -> dict:
     return json.loads(content)
 
 
-def build_wiki_from_conversation(model_name: str, api_key: str, messages: list) -> tuple[dict | None, str]:
+def build_wiki_from_conversation(model_name: str, messages: list) -> tuple[dict | None, str]:
     """
     면접 대화를 분석해서 interview wiki를 생성/업데이트합니다.
+    API Key는 .env 파일에서 자동으로 로드됩니다.
     Returns: (updated_wiki, error_message)
     """
     conversation_text = "\n".join(
@@ -80,8 +75,6 @@ def build_wiki_from_conversation(model_name: str, api_key: str, messages: list) 
 }}"""
 
     try:
-        _set_api_key(model_name, api_key)
-
         response = completion(
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
@@ -90,9 +83,10 @@ def build_wiki_from_conversation(model_name: str, api_key: str, messages: list) 
         raw = response.choices[0].message.content
         new_data = _parse_json_response(raw)
 
-        # 기존 wiki와 병합 (중복 제거)
         wiki = load_wiki()
         for key in EMPTY_WIKI:
+            if key == "_updated_at":
+                continue
             if key in new_data and isinstance(new_data[key], list):
                 wiki[key] = list(dict.fromkeys(wiki[key] + new_data[key]))
 
