@@ -37,6 +37,16 @@ def reset_wiki() -> None:
     save_wiki({"sessions": []})
 
 
+def delete_session(session_id: int) -> None:
+    """특정 세션을 삭제하고 나머지 세션의 id를 재정렬합니다."""
+    wiki = load_wiki()
+    sessions = [s for s in wiki["sessions"] if s["id"] != session_id]
+    for i, session in enumerate(sessions, start=1):
+        session["id"] = i
+    wiki["sessions"] = sessions
+    save_wiki(wiki)
+
+
 def _parse_json_response(content: str) -> dict:
     content = content.strip()
     if "```json" in content:

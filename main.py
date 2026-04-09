@@ -18,14 +18,15 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "rag" not in st.session_state:
     st.session_state.rag = RAGEngine()
-if "wiki" not in st.session_state:
-    st.session_state.wiki = load_wiki()
+st.session_state.wiki = load_wiki()
 if "pdf_processed" not in st.session_state:
     st.session_state.pdf_processed = False
 if "processed_filename" not in st.session_state:
     st.session_state.processed_filename = None
 if "pending_pdf_path" not in st.session_state:
     st.session_state.pending_pdf_path = None
+if "pending_wiki_build" not in st.session_state:
+    st.session_state.pending_wiki_build = False
 if "is_loading" not in st.session_state:
     st.session_state.is_loading = False
 if "awaiting_settings" not in st.session_state:
@@ -64,25 +65,45 @@ def parse_settings(text: str) -> tuple[str, str]:
 if st.session_state.pending_pdf_path:
     pdf_path = st.session_state.pending_pdf_path
     st.session_state.pending_pdf_path = None
-    with st.spinner("파일 분석 중..."):
-        msg = st.session_state.rag.process_pdf(pdf_path)
+    try:
+        with st.spinner("파일 분석 중..."):
+            msg = st.session_state.rag.process_pdf(pdf_path)
+        if msg.startswith("✅"):
+            filename = os.path.basename(pdf_path)
+            st.session_state.processed_filename = filename
+            st.session_state.pdf_processed = True
+            st.session_state.awaiting_settings = True
+            greeting = (
+                "안녕하세요! 저는 오늘 면접을 진행할 AI 면접관입니다. 이력서를 검토했습니다.\n\n"
+                "면접을 시작하기 전에 두 가지를 알려주세요:\n\n"
+                "1. **원하시는 면접 난이도** (예: 3년차 / 5년차 / 10년차)\n"
+                "2. **분야** (예: 백엔드 / 프론트엔드 / 풀스택 / 데이터·AI)\n\n"
+                "예시: `5년차 백엔드`"
+            )
+            st.session_state.messages.append({"role": "assistant", "content": greeting})
+        else:
+            st.error(msg)
+    finally:
+        st.session_state.is_loading = False
+elif st.session_state.pending_wiki_build:
+    st.session_state.pending_wiki_build = False
+    wiki_model = st.session_state.pop("pending_wiki_model", "claude-cli")
+    try:
+        with st.spinner("Wiki 생성 중..."):
+            wiki, error = build_wiki_from_conversation(
+                wiki_model, st.session_state.messages
+            )
+        if error:
+            st.error(error)
+        else:
+            st.session_state.wiki = wiki
+            st.success("Wiki 업데이트 완료!")
+    finally:
+        st.session_state.is_loading = False
+else:
+    # 처리 대기 중인 작업이 없으면 is_loading 초기화
+    # (다른 페이지 이동 후 돌아올 때 stuck 방지)
     st.session_state.is_loading = False
-
-    if msg.startswith("✅"):
-        filename = os.path.basename(pdf_path)
-        st.session_state.processed_filename = filename
-        st.session_state.pdf_processed = True
-        st.session_state.awaiting_settings = True
-        greeting = (
-            "안녕하세요! 저는 오늘 면접을 진행할 AI 면접관입니다. 이력서를 검토했습니다.\n\n"
-            "면접을 시작하기 전에 두 가지를 알려주세요:\n\n"
-            "1. **원하시는 면접 난이도** (예: 3년차 / 5년차 / 10년차)\n"
-            "2. **분야** (예: 백엔드 / 프론트엔드 / 풀스택 / 데이터·AI)\n\n"
-            "예시: `5년차 백엔드`"
-        )
-        st.session_state.messages.append({"role": "assistant", "content": greeting})
-    else:
-        st.error(msg)
 
 
 # 사이드바: 설정
@@ -163,15 +184,10 @@ with st.sidebar:
     st.header("📖 Interview Wiki")
     btn_disabled = st.session_state.is_loading or not st.session_state.messages
     if st.button("🔚 면접 종료 & Wiki 생성", type="primary", use_container_width=True, disabled=btn_disabled):
-        with st.spinner("Wiki 생성 중..."):
-            wiki, error = build_wiki_from_conversation(
-                model_provider, st.session_state.messages
-            )
-        if error:
-            st.error(error)
-        else:
-            st.session_state.wiki = wiki
-            st.success("Wiki 업데이트 완료!")
+        st.session_state.pending_wiki_build = True
+        st.session_state.pending_wiki_model = model_provider
+        st.session_state.is_loading = True
+        st.rerun()
 
     if st.button("🗑️ Wiki 초기화", use_container_width=True, disabled=st.session_state.is_loading):
         reset_wiki()
