@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from core import get_interview_response
 from rag_engine import RAGEngine
 from wiki_builder import build_wiki_from_conversation, load_wiki, reset_wiki, wiki_to_context_string
+from template_manager import save_template, list_templates, get_template_path, delete_template
 load_dotenv()
 
 os.makedirs("./data", exist_ok=True)
@@ -35,6 +36,8 @@ if "difficulty" not in st.session_state:
     st.session_state.difficulty = None
 if "field" not in st.session_state:
     st.session_state.field = None
+if "template_save_msg" not in st.session_state:
+    st.session_state.template_save_msg = None
 
 
 def parse_settings(text: str) -> tuple[str, str]:
@@ -162,6 +165,36 @@ with st.sidebar:
 
     st.divider()
 
+    st.header("📁 저장된 템플릿")
+    templates = list_templates()
+    if templates:
+        template_options = {t["id"]: f"{t['name']} ({t['created_at']})" for t in templates}
+        selected_id = st.selectbox(
+            "템플릿 선택",
+            options=list(template_options.keys()),
+            format_func=lambda tid: template_options[tid],
+            disabled=st.session_state.is_loading,
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📂 불러오기", use_container_width=True, disabled=st.session_state.is_loading):
+                path = get_template_path(selected_id)
+                if path:
+                    st.session_state.pending_pdf_path = path
+                    st.session_state.processed_filename = None
+                    st.session_state.is_loading = True
+                    st.rerun()
+                else:
+                    st.error("템플릿 파일을 찾을 수 없습니다.")
+        with col2:
+            if st.button("🗑️ 삭제", use_container_width=True, disabled=st.session_state.is_loading):
+                delete_template(selected_id)
+                st.rerun()
+    else:
+        st.caption("저장된 템플릿이 없습니다.")
+
+    st.divider()
+
     st.header("📄 자료 업로드")
     uploaded_file = st.file_uploader(
         "이력서나 회사 위키(PDF)를 올려주세요",
@@ -171,6 +204,22 @@ with st.sidebar:
     if uploaded_file:
         if st.session_state.processed_filename == uploaded_file.name:
             st.success(f"✅ {uploaded_file.name} 분석 완료")
+            st.text_input(
+                "템플릿 이름",
+                key="template_name_input",
+                placeholder="예: 내 이력서",
+            )
+            if st.button("💾 템플릿으로 저장", use_container_width=True):
+                src = f"./data/{uploaded_file.name}"
+                name = st.session_state.get("template_name_input", "") or uploaded_file.name
+                try:
+                    save_template(src, name)
+                    st.session_state.template_save_msg = f"✅ '{name}' 저장 완료"
+                except Exception as e:
+                    st.session_state.template_save_msg = f"❌ 저장 실패: {e}"
+                st.rerun()
+            if st.session_state.template_save_msg:
+                st.info(st.session_state.template_save_msg)
         elif not st.session_state.is_loading:
             file_path = f"./data/{uploaded_file.name}"
             with open(file_path, "wb") as f:
